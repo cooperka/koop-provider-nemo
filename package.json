@@ -1,5 +1,5 @@
 {
-  "name": "koop-provider-sample",
+  "name": "koop-provider-nemo",
   "version": "1.0.0",
   "description": "A sample provider for koop",
   "main": "src/index.js",
