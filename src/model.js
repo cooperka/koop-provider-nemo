@@ -24,12 +24,27 @@ function Model (koop) {}
 Model.prototype.getData = function (req, callback) {
   const key = config.trimet.key
 
+  const { query: { host, mission, formId, username, password } } = req
+
+  const options = {
+    url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
+    headers: {
+      'Auth': 'token foo'
+    }
+  };
+
+  const oldExampleUrl = `https://developer.trimet.org/ws/v2/vehicles/onRouteOnly/false/appid/${key}`
+
   // Call the remote API with our developer key
-  request(`https://developer.trimet.org/ws/v2/vehicles/onRouteOnly/false/appid/${key}`, (err, res, body) => {
+  request(options.url, (err, res, body) => {
     if (err) return callback(err)
 
     // translate the response into geojson
     const geojson = translate(body)
+
+    geojson.metadata = {
+      idField: "ResponseID"
+    }
 
     // Optional: cache data for 10 seconds at a time by setting the ttl or "Time to Live"
     // geojson.ttl = 10
@@ -49,7 +64,7 @@ Model.prototype.getData = function (req, callback) {
 function translate (input) {
   return {
     type: 'FeatureCollection',
-    features: input.resultSet.vehicle.map(formatFeature)
+    features: input.value.map(formatFeature)
   }
 }
 
@@ -58,16 +73,17 @@ function formatFeature (inputFeature) {
   const feature = {
     type: 'Feature',
     properties: inputFeature,
-    geometry: {
-      type: 'Point',
-      coordinates: [inputFeature.longitude, inputFeature.latitude]
-    }
   }
-  // But we also want to translate a few of the date fields so they are easier to use downstream
-  const dateFields = ['expires', 'serviceDate', 'time']
-  dateFields.forEach(field => {
-    feature.properties[field] = new Date(feature.properties[field]).toISOString()
-  })
+
+  // Temporary hack for demo.
+  if (inputFeature.LocationQ) {
+    feature.geometry = {
+      type: 'Point',
+      coordinates: [inputFeature.LocationQ.Longitude, inputFeature.LocationQ.Latitude]
+    }
+    delete feature.properties.LocationQ
+  }
+
   return feature
 }
 
