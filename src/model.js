@@ -1,5 +1,6 @@
 const request = require('request').defaults({ gzip: true, json: true });
 const config = require('config');
+const { forOwn } = require('lodash');
 
 const example = {
   koopHost: 'my-koop.org',
@@ -24,17 +25,6 @@ function excessParam(callback, excess) {
 
 function Model(koop) {}
 
-// Public function to return data from the
-// Return: GeoJSON FeatureCollection
-//
-// Config parameters (config/default.json)
-// req.
-//
-// URL path parameters:
-// req.params.host (if index.js:hosts true)
-// req.params.id  (if index.js:disableIdParam false)
-// req.params.layer
-// req.params.method
 Model.prototype.getData = function (req, callback) {
   // Client can optionally configure things here.
   const {} = config;
@@ -86,14 +76,15 @@ function formatFeature(inputFeature) {
     properties: inputFeature,
   };
 
-  // Temporary hack for demo.
-  if (inputFeature.LocationQ) {
-    feature.geometry = {
-      type: 'Point',
-      coordinates: [inputFeature.LocationQ.Longitude, inputFeature.LocationQ.Latitude],
-    };
-    delete feature.properties.LocationQ;
-  }
+  forOwn(inputFeature, (value, key) => {
+    if (value && value.Longitude != null) {
+      feature.geometry = {
+        type: 'Point',
+        coordinates: [value.Longitude, value.Latitude],
+      };
+      delete feature.properties[key];
+    }
+  });
 
   return feature;
 }
