@@ -10,6 +10,25 @@ const config = require('config')
 
 function Model (koop) {}
 
+const example = {
+  koopHost: "my-koop.org",
+  host: "my-nemo.org",
+  mission: "my_mission",
+  username: "my_user",
+  password: "my_pass",
+  formId: "example-form-id-123",
+}
+
+const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`
+
+function missingParam(callback, param, example) {
+  callback(new Error(`${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`))
+}
+
+function excessParam(callback, excess) {
+  callback(new Error(`Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`))
+}
+
 // Public function to return data from the
 // Return: GeoJSON FeatureCollection
 //
@@ -24,16 +43,23 @@ function Model (koop) {}
 Model.prototype.getData = function (req, callback) {
   const key = config.trimet.key
 
-  const { query: { host, mission, formId, username, password } } = req
+  const { host: hostTokens, id: formId } = req.params
+  const [host, mission, username, password, ...excess] = hostTokens.split(" ")
+  if (!host) return missingParam(callback, "Host", example.host)
+  if (!mission) return missingParam(callback, "Mission", example.mission)
+  if (!username) return missingParam(callback, "Username", example.username)
+  if (!password) return missingParam(callback, "Password", example.password)
+  if (excess && excess.length) return excessParam(callback, excess)
 
   const options = {
     url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
+    // TODO: Support auth tokens instead of user/pass.
     headers: {
       'Auth': 'token foo'
     }
   };
 
-  const oldExampleUrl = `https://developer.trimet.org/ws/v2/vehicles/onRouteOnly/false/appid/${key}`
+  console.debug(`<- Requesting NEMO responses for ${formId}`);
 
   // Call the remote API with our developer key
   request(options.url, (err, res, body) => {
@@ -45,8 +71,9 @@ Model.prototype.getData = function (req, callback) {
       features: body.value.map(formatFeature),
       // Example of metadata options: https://github.com/koopjs/FeatureServer
       metadata: {
+        name: "NEMO",
         idField: "ResponseID"
-      }
+      },
       // Optional: cache data for N seconds at a time.
       // ttl: 10
     }

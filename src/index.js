@@ -12,8 +12,8 @@
 const provider = {
   type: 'provider',
   name: 'nemo',
-  hosts: false, // if true, also adds disableIdParam
-  disableIdParam: true, // if true, adds to path and req.params
+  hosts: true, // if true, also adds disableIdParam
+  disableIdParam: false, // if true, adds to path and req.params
   Controller: require('./controller'),
   Model: require('./model'),
   routes: require('./routes'),
