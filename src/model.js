@@ -75,7 +75,7 @@ Model.prototype.getData = function (req, callback) {
         idField: "ResponseID"
       },
       // Optional: cache data for N seconds at a time.
-      // ttl: 10
+      ttl: 10
     }
 
     // hand off the data to Koop
