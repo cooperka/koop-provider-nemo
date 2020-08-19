@@ -13,13 +13,13 @@ const example = {
 const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`;
 
 function missingParam(callback, param, example) {
-  callback(
-    new Error(`${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`),
-  );
+  const msg = `${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`;
+  callback(new Error(msg));
 }
 
 function excessParam(callback, excess) {
-  callback(new Error(`Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`));
+  const msg = `Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`;
+  callback(new Error(msg));
 }
 
 function Model(koop) {}

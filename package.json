@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "koop serve",
-    "test": "standard && tape test/*.js | tap-spec"
+    "test": "standard && tape test/*.js | tap-spec",
+    "format": "prettier --write '{src,test}/**/*.js'"
   },
   "husky": {
     "hooks": {
