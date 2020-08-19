@@ -41,7 +41,8 @@ function excessParam(callback, excess) {
 // req.params.layer
 // req.params.method
 Model.prototype.getData = function (req, callback) {
-  const key = config.trimet.key
+  // Client can optionally configure things here.
+  const {} = config
 
   const { host: hostTokens, id: formId } = req.params
   const [host, mission, username, password, ...excess] = hostTokens.split(" ")
