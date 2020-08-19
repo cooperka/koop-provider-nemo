@@ -40,32 +40,20 @@ Model.prototype.getData = function (req, callback) {
     if (err) return callback(err)
 
     // translate the response into geojson
-    const geojson = translate(body)
-
-    geojson.metadata = {
-      idField: "ResponseID"
+    const geojson = {
+      type: 'FeatureCollection',
+      features: body.value.map(formatFeature),
+      // Example of metadata options: https://github.com/koopjs/FeatureServer
+      metadata: {
+        idField: "ResponseID"
+      }
+      // Optional: cache data for N seconds at a time.
+      // ttl: 10
     }
-
-    // Optional: cache data for 10 seconds at a time by setting the ttl or "Time to Live"
-    // geojson.ttl = 10
-
-    // Optional: Service metadata and geometry type
-    // geojson.metadata = {
-    //   name: 'Koop Sample Provider',
-    //   description: `Generated from ${url}`,
-    //   geometryType: 'Polygon' // Default is automatic detection in Koop
-    // }
 
     // hand off the data to Koop
     callback(null, geojson)
   })
-}
-
-function translate (input) {
-  return {
-    type: 'FeatureCollection',
-    features: input.value.map(formatFeature)
-  }
 }
 
 function formatFeature (inputFeature) {
