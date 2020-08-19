@@ -1,33 +1,28 @@
-/*
-  model.js
-
-  This file is required. It must export a class with at least one public function called `getData`
-
-  Documentation: http://koopjs.github.io/docs/usage/provider
-*/
-const request = require('request').defaults({ gzip: true, json: true })
-const config = require('config')
-
-function Model (koop) {}
+const request = require('request').defaults({ gzip: true, json: true });
+const config = require('config');
 
 const example = {
-  koopHost: "my-koop.org",
-  host: "my-nemo.org",
-  mission: "my_mission",
-  username: "my_user",
-  password: "my_pass",
-  formId: "example-form-id-123",
-}
+  koopHost: 'my-koop.org',
+  host: 'my-nemo.org',
+  mission: 'my_mission',
+  username: 'my_user',
+  password: 'my_pass',
+  formId: 'example-form-id-123',
+};
 
-const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`
+const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`;
 
 function missingParam(callback, param, example) {
-  callback(new Error(`${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`))
+  callback(
+    new Error(`${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`),
+  );
 }
 
 function excessParam(callback, excess) {
-  callback(new Error(`Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`))
+  callback(new Error(`Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`));
 }
+
+function Model(koop) {}
 
 // Public function to return data from the
 // Return: GeoJSON FeatureCollection
@@ -42,29 +37,29 @@ function excessParam(callback, excess) {
 // req.params.method
 Model.prototype.getData = function (req, callback) {
   // Client can optionally configure things here.
-  const {} = config
+  const {} = config;
 
-  const { host: hostTokens, id: formId } = req.params
-  const [host, mission, username, password, ...excess] = hostTokens.split(" ")
-  if (!host) return missingParam(callback, "Host", example.host)
-  if (!mission) return missingParam(callback, "Mission", example.mission)
-  if (!username) return missingParam(callback, "Username", example.username)
-  if (!password) return missingParam(callback, "Password", example.password)
-  if (excess && excess.length) return excessParam(callback, excess)
+  const { host: hostTokens, id: formId } = req.params;
+  const [host, mission, username, password, ...excess] = hostTokens.split(' ');
+  if (!host) return missingParam(callback, 'Host', example.host);
+  if (!mission) return missingParam(callback, 'Mission', example.mission);
+  if (!username) return missingParam(callback, 'Username', example.username);
+  if (!password) return missingParam(callback, 'Password', example.password);
+  if (excess && excess.length) return excessParam(callback, excess);
 
   const options = {
     url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
     // TODO: Support auth tokens instead of user/pass.
     headers: {
-      'Auth': 'token foo'
-    }
+      Auth: 'token foo',
+    },
   };
 
   console.debug(`<- Requesting NEMO responses for ${formId}`);
 
   // Call the remote API with our developer key
   request(options.url, (err, res, body) => {
-    if (err) return callback(err)
+    if (err) return callback(err);
 
     // translate the response into geojson
     const geojson = {
@@ -72,38 +67,38 @@ Model.prototype.getData = function (req, callback) {
       features: body.value.map(formatFeature),
       // Example of metadata options: https://github.com/koopjs/FeatureServer
       metadata: {
-        name: "NEMO",
-        idField: "ResponseID"
+        name: 'NEMO',
+        idField: 'ResponseID',
       },
       // Optional: cache data for N seconds at a time.
-      ttl: 10
-    }
+      ttl: 10,
+    };
 
     // hand off the data to Koop
-    callback(null, geojson)
-  })
-}
+    callback(null, geojson);
+  });
+};
 
-function formatFeature (inputFeature) {
+function formatFeature(inputFeature) {
   // Most of what we need to do here is extract the longitude and latitude
   const feature = {
     type: 'Feature',
     properties: inputFeature,
-  }
+  };
 
   // Temporary hack for demo.
   if (inputFeature.LocationQ) {
     feature.geometry = {
       type: 'Point',
-      coordinates: [inputFeature.LocationQ.Longitude, inputFeature.LocationQ.Latitude]
-    }
-    delete feature.properties.LocationQ
+      coordinates: [inputFeature.LocationQ.Longitude, inputFeature.LocationQ.Latitude],
+    };
+    delete feature.properties.LocationQ;
   }
 
-  return feature
+  return feature;
 }
 
-module.exports = Model
+module.exports = Model;
 
 /* Example provider API:
    - needs to be converted to GeoJSON Feature Collection
