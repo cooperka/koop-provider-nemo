@@ -1,4 +1,4 @@
-const request = require('request').defaults({ gzip: true, json: true });
+const request = require('axios');
 const config = require('config');
 const { forOwn } = require('lodash');
 
@@ -13,23 +13,22 @@ const example = {
 
 const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`;
 
-function missingParam(callback, param, example) {
-  const msg = `${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`;
-  callback(new Error(msg));
-}
-
-function excessParam(callback, excess) {
-  const msg = `Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`;
-  callback(new Error(msg));
-}
-
 function Model(koop) {}
 
-Model.prototype.getData = function (req, callback) {
+Model.prototype.getData = async (request, callback) => {
+  try {
+    const options = getOptions(request);
+    await performRequest(options, callback);
+  } catch (error) {
+    callback(error);
+  }
+};
+
+function getOptions(request) {
   // Client can optionally configure things here.
   const {} = config;
 
-  const { host: hostTokens, id: formId } = req.params;
+  const { host: hostTokens, id: formId } = request.params;
   const [host, mission, username, password, ...excess] = hostTokens.split(' ');
   if (!host) return missingParam(callback, 'Host', example.host);
   if (!mission) return missingParam(callback, 'Mission', example.mission);
@@ -37,24 +36,23 @@ Model.prototype.getData = function (req, callback) {
   if (!password) return missingParam(callback, 'Password', example.password);
   if (excess && excess.length) return excessParam(callback, excess);
 
-  const options = {
+  return {
     url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
     // TODO: Support auth tokens instead of user/pass.
     headers: {
       Auth: 'token foo',
     },
   };
+}
 
-  console.debug(`<- Requesting NEMO responses for ${formId}`);
+async function performRequest(options, callback) {
+  console.debug(`<- Requesting ${options.url}`);
 
-  // Call the remote API with our developer key
-  request(options.url, (err, res, body) => {
-    if (err) return callback(err);
-
+  return request(options.url).then(({ data }) => {
     // translate the response into geojson
     const geojson = {
       type: 'FeatureCollection',
-      features: body.value.map(formatFeature),
+      features: data.value.map(formatFeature),
       // Example of metadata options: https://github.com/koopjs/FeatureServer
       metadata: {
         name: 'NEMO',
@@ -67,7 +65,7 @@ Model.prototype.getData = function (req, callback) {
     // hand off the data to Koop
     callback(null, geojson);
   });
-};
+}
 
 function formatFeature(inputFeature) {
   // Most of what we need to do here is extract the longitude and latitude
@@ -87,6 +85,16 @@ function formatFeature(inputFeature) {
   });
 
   return feature;
+}
+
+function missingParam(callback, param, example) {
+  const msg = `${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`;
+  callback(new Error(msg));
+}
+
+function excessParam(callback, excess) {
+  const msg = `Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`;
+  callback(new Error(msg));
 }
 
 module.exports = Model;
