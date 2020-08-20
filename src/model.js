@@ -18,7 +18,8 @@ function Model(koop) {}
 Model.prototype.getData = async (request, callback) => {
   try {
     const options = getOptions(request);
-    await performRequest(options, callback);
+    const geojson = await performRequest(options);
+    callback(null, geojson);
   } catch (error) {
     callback(error);
   }
@@ -30,11 +31,11 @@ function getOptions(request) {
 
   const { host: hostTokens, id: formId } = request.params;
   const [host, mission, username, password, ...excess] = hostTokens.split(' ');
-  if (!host) return missingParam(callback, 'Host', example.host);
-  if (!mission) return missingParam(callback, 'Mission', example.mission);
-  if (!username) return missingParam(callback, 'Username', example.username);
-  if (!password) return missingParam(callback, 'Password', example.password);
-  if (excess && excess.length) return excessParam(callback, excess);
+  if (!host) throw missingParamError('Host', example.host);
+  if (!mission) throw missingParamError('Mission', example.mission);
+  if (!username) throw missingParamError('Username', example.username);
+  if (!password) throw missingParamError('Password', example.password);
+  if (excess && excess.length) throw excessParamError(excess);
 
   return {
     url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
@@ -45,7 +46,7 @@ function getOptions(request) {
   };
 }
 
-async function performRequest(options, callback) {
+async function performRequest(options) {
   console.debug(`<- Requesting ${options.url}`);
 
   return request(options.url).then(({ data }) => {
@@ -62,8 +63,7 @@ async function performRequest(options, callback) {
       ttl: 10,
     };
 
-    // hand off the data to Koop
-    callback(null, geojson);
+    return geojson;
   });
 }
 
@@ -87,14 +87,14 @@ function formatFeature(inputFeature) {
   return feature;
 }
 
-function missingParam(callback, param, example) {
+function missingParamError(param, example) {
   const msg = `${param} not provided, should look like ${example}. Full example: ${FULL_EXAMPLE}.`;
-  callback(new Error(msg));
+  return new Error(msg);
 }
 
-function excessParam(callback, excess) {
+function excessParamError(excess) {
   const msg = `Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`;
-  callback(new Error(msg));
+  return new Error(msg);
 }
 
 module.exports = Model;
