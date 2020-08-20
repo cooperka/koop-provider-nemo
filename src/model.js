@@ -5,13 +5,12 @@ const { forOwn } = require('lodash');
 const example = {
   koopHost: 'my-koop.org',
   host: 'my-nemo.org',
-  mission: 'my_mission',
-  username: 'my_user',
-  password: 'my_pass',
-  formId: 'example-form-id-123',
+  mission: 'my-mission',
+  apiKey: 'my-api-key',
+  formId: 'my-form-id',
 };
 
-const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`;
+const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.apiKey}/${example.formId}/FeatureServer/`;
 
 function Model(koop) {}
 
@@ -30,18 +29,16 @@ function getOptions(request) {
   const {} = config;
 
   const { host: hostTokens, id: formId } = request.params;
-  const [host, mission, username, password, ...excess] = hostTokens.split(' ');
+  const [host, mission, apiKey, ...excess] = hostTokens.split(' ');
   if (!host) throw missingParamError('Host', example.host);
   if (!mission) throw missingParamError('Mission', example.mission);
-  if (!username) throw missingParamError('Username', example.username);
-  if (!password) throw missingParamError('Password', example.password);
+  if (!apiKey) throw missingParamError('API Key', example.apiKey);
   if (excess && excess.length) throw excessParamError(excess);
 
   return {
-    url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
-    // TODO: Support auth tokens instead of user/pass.
+    url: `https://${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
     headers: {
-      Auth: 'token foo',
+      Authorization: `Token token=${apiKey}`,
     },
   };
 }
@@ -49,7 +46,7 @@ function getOptions(request) {
 async function performRequest(options) {
   console.debug(`<- Requesting ${options.url}`);
 
-  return request(options.url).then(({ data }) => {
+  return request(options).then(({ data }) => {
     // translate the response into geojson
     const geojson = {
       type: 'FeatureCollection',
