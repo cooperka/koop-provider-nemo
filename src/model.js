@@ -21,7 +21,15 @@ Model.prototype.getData = async (request, callback) => {
     const geojson = await performRequest(options);
     callback(null, geojson);
   } catch (error) {
-    callback(error);
+    try {
+      logError(error);
+      callback(error);
+    } catch (error) {
+      // Certain types of error, e.g. HTTPS certificate issues may result in failed callback.
+      // That's strange but this will catch anything that might go wrong.
+      console.error('Failed to callback:', error);
+      callback(new Error('Something went wrong.'));
+    }
   }
 };
 
@@ -95,6 +103,28 @@ function missingParamError(param, example) {
 function excessParamError(excess) {
   const msg = `Unexpected additional params: ${excess}. Full example: ${FULL_EXAMPLE}.`;
   return new Error(msg);
+}
+
+function logError(error) {
+  if (error.isAxiosError) {
+    console.error(error.stack);
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      delete error.response.request;
+      console.error('Response:', error.response);
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      console.error('Request:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Config:', error.config);
+    }
+  } else {
+    console.error(error);
+  }
 }
 
 module.exports = Model;
