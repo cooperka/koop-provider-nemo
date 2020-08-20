@@ -3,12 +3,12 @@ const config = require('config');
 const { forOwn } = require('lodash');
 
 const example = {
-  koopHost: 'my-koop.org',
-  host: 'my-nemo.org',
+  koopHost: 'koop.getnemo.org',
+  host: 'my.nemo-server.org',
   mission: 'my_mission',
   username: 'my_user',
   password: 'my_pass',
-  formId: 'example-form-id-123',
+  formId: 'my-form-id',
 };
 
 const FULL_EXAMPLE = `https://${example.koopHost}/nemo/${example.host} ${example.mission} ${example.username} ${example.password}/${example.formId}/FeatureServer/`;
