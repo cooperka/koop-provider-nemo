@@ -130,6 +130,7 @@ function logError(error) {
 }
 
 module.exports = Model;
+module.exports.FULL_EXAMPLE = FULL_EXAMPLE;
 
 /* Example provider API:
    - needs to be converted to GeoJSON Feature Collection
