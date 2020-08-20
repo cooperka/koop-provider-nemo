@@ -1,4 +1,4 @@
-const request = require('axios');
+const axios = require('axios');
 const config = require('config');
 const { forOwn } = require('lodash');
 
@@ -45,11 +45,13 @@ function getOptions(request) {
   if (!password) throw missingParamError('Password', example.password);
   if (excess && excess.length) throw excessParamError(excess);
 
+  const auth = Buffer.from(`${username}:${password}`).toString('base64');
+
   return {
-    url: `https://${username}:${password}@${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
+    url: `https://${host}/en/m/${mission}/odata/v1/Responses-${formId}`,
     // TODO: Support auth tokens instead of user/pass.
     headers: {
-      Auth: 'token foo',
+      Authorization: `Basic ${auth}`,
     },
   };
 }
@@ -57,7 +59,7 @@ function getOptions(request) {
 async function performRequest(options) {
   console.debug(`<- Requesting ${options.url}`);
 
-  return request(options.url).then(({ data }) => {
+  return axios(options).then(({ data }) => {
     // translate the response into geojson
     const geojson = {
       type: 'FeatureCollection',
