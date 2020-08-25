@@ -57,7 +57,7 @@ function getOptions(request) {
 }
 
 async function performRequest(options) {
-  console.debug(`<- Requesting ${options.url}`);
+  console.debug(`-> Requesting ${options.url}`);
 
   return axios(options).then(({ data }) => {
     // translate the response into geojson
