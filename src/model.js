@@ -77,24 +77,32 @@ async function performRequest(options) {
   });
 }
 
-function formatFeature(inputFeature) {
-  // Most of what we need to do here is extract the longitude and latitude
+/**
+ * Given a NEMO response, return GeoJson.
+ */
+function formatFeature(response) {
   const feature = {
     type: 'Feature',
-    properties: inputFeature,
+    properties: response,
   };
 
-  forOwn(inputFeature, (value, key) => {
-    if (value && value.Longitude != null) {
-      feature.geometry = {
-        type: 'Point',
-        coordinates: [value.Longitude, value.Latitude],
-      };
-      delete feature.properties[key];
-    }
-  });
+  const coordinates = findFirstCoordinates(response);
+  if (coordinates) {
+    feature.geometry = {
+      type: 'Point',
+      coordinates,
+    };
+  }
 
   return feature;
+}
+
+function findFirstCoordinates(response) {
+  forOwn(response, (value, _key) => {
+    if (value && value.Longitude != null) {
+      return [value.Longitude, value.Latitude];
+    }
+  });
 }
 
 function missingParamError(param, example) {
