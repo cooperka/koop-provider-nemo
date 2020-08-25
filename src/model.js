@@ -1,6 +1,6 @@
 const axios = require('axios');
 const config = require('config');
-const { forOwn } = require('lodash');
+const { values, isObject, isArray } = require('lodash');
 
 const example = {
   koopHost: 'koop.getnemo.org',
@@ -98,11 +98,16 @@ function formatFeature(response) {
 }
 
 function findFirstCoordinates(response) {
-  forOwn(response, (value, _key) => {
-    if (value && value.Longitude != null) {
-      return [value.Longitude, value.Latitude];
+  for (const entry of values(response)) {
+    if (entry && entry.Longitude != null && entry.Latitude != null) {
+      return [entry.Longitude, entry.Latitude];
     }
-  });
+
+    if (isArray(entry) || isObject(entry)) {
+      const found = findFirstCoordinates(entry);
+      if (found) return found;
+    }
+  }
 }
 
 function missingParamError(param, example) {
